@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-from functools import lru_cache
 from typing import Any, AsyncIterator, Dict, List, Optional
 
 from app.config import settings
@@ -11,7 +10,7 @@ from app.utils.logging import get_logger
 logger = get_logger(__name__)
 
 # ---------------------------------------------------------------------------
-# Mock responses for demo mode (no API key required)
+# Mock responses for demo / no-key mode
 # ---------------------------------------------------------------------------
 
 _MOCK_SUMMARY = """
@@ -66,7 +65,7 @@ _MOCK_HYPOTHESES = [
 
 
 # ---------------------------------------------------------------------------
-# LiteLLM router with fallback and caching
+# LiteLLM router — supports GenAI Lab, OpenAI, Gemini with fallback chain
 # ---------------------------------------------------------------------------
 
 class LLMService:
@@ -74,7 +73,7 @@ class LLMService:
         self._router = None
         self._cache: Dict[str, str] = {}
 
-    def _build_router(self):
+    def _build_router(self) -> None:
         if self._router is not None:
             return
 
@@ -85,12 +84,63 @@ class LLMService:
             try:
                 from litellm import Cache
                 litellm.cache = Cache(type="local", ttl=settings.LITELLM_CACHE_TTL)
-            except Exception as cache_err:
-                logger.warning("litellm_cache_init_failed", error=str(cache_err))
+            except Exception as e:
+                logger.warning("litellm_cache_init_failed", error=str(e))
 
-        model_list = []
+        model_list: List[Dict] = []
 
-        if settings.has_openai:
+        # ------------------------------------------------------------------
+        # Priority 1: TCS GenAI Lab MaaS (OpenAI-compatible custom endpoint)
+        # All models (GPT, Gemini, DeepSeek, Llama) are served via one key.
+        # LiteLLM uses "openai/<model>" to call any OpenAI-compatible endpoint.
+        # ------------------------------------------------------------------
+        if settings.has_genailab:
+            _base_params = {
+                "api_key": settings.GENAILAB_API_KEY,
+                "api_base": settings.GENAILAB_API_BASE,
+                "max_tokens": settings.LITELLM_MAX_TOKENS,
+                "temperature": settings.LITELLM_TEMPERATURE,
+            }
+
+            # Primary model (e.g. genailab-maas-gpt-4o)
+            model_list.append({
+                "model_name": "primary",
+                "litellm_params": {
+                    "model": f"openai/{settings.LITELLM_PRIMARY_MODEL}",
+                    **_base_params,
+                }
+            })
+
+            # Reasoning model (same or different — e.g. DeepSeek for hypothesis)
+            model_list.append({
+                "model_name": "reasoning",
+                "litellm_params": {
+                    "model": f"openai/{settings.LITELLM_REASONING_MODEL}",
+                    **_base_params,
+                    "temperature": 0.8,
+                }
+            })
+
+            # Fallback model (e.g. gemini-2.5-flash for cost/speed)
+            model_list.append({
+                "model_name": "fallback",
+                "litellm_params": {
+                    "model": f"openai/{settings.LITELLM_FALLBACK_MODEL}",
+                    **_base_params,
+                }
+            })
+
+            logger.info(
+                "litellm_genailab_configured",
+                primary=settings.LITELLM_PRIMARY_MODEL,
+                fallback=settings.LITELLM_FALLBACK_MODEL,
+                base=settings.GENAILAB_API_BASE,
+            )
+
+        # ------------------------------------------------------------------
+        # Priority 2: Direct OpenAI (if no GenAI Lab key)
+        # ------------------------------------------------------------------
+        elif settings.has_openai:
             model_list.append({
                 "model_name": "primary",
                 "litellm_params": {
@@ -109,10 +159,23 @@ class LLMService:
                     "temperature": 0.8,
                 }
             })
+            if settings.has_gemini:
+                model_list.append({
+                    "model_name": "fallback",
+                    "litellm_params": {
+                        "model": settings.LITELLM_FALLBACK_MODEL,
+                        "api_key": settings.GEMINI_API_KEY,
+                        "max_tokens": settings.LITELLM_MAX_TOKENS,
+                        "temperature": settings.LITELLM_TEMPERATURE,
+                    }
+                })
 
-        if settings.has_gemini:
+        # ------------------------------------------------------------------
+        # Priority 3: Gemini only
+        # ------------------------------------------------------------------
+        elif settings.has_gemini:
             model_list.append({
-                "model_name": "fallback",
+                "model_name": "primary",
                 "litellm_params": {
                     "model": settings.LITELLM_FALLBACK_MODEL,
                     "api_key": settings.GEMINI_API_KEY,
@@ -120,24 +183,31 @@ class LLMService:
                     "temperature": settings.LITELLM_TEMPERATURE,
                 }
             })
+            model_list.append({
+                "model_name": "reasoning",
+                "litellm_params": {
+                    "model": settings.LITELLM_FALLBACK_MODEL,
+                    "api_key": settings.GEMINI_API_KEY,
+                    "max_tokens": settings.LITELLM_MAX_TOKENS,
+                    "temperature": 0.8,
+                }
+            })
 
         if not model_list:
-            logger.warning("no_llm_keys_configured", hint="Set OPENAI_API_KEY or GEMINI_API_KEY")
+            logger.warning("no_llm_keys_configured",
+                           hint="Set GENAILAB_API_KEY, OPENAI_API_KEY, or GEMINI_API_KEY")
             return
 
-        fallback_map = []
-        if settings.has_openai and settings.has_gemini:
-            fallback_map = [{"primary": ["fallback"]}, {"reasoning": ["fallback"]}]
+        # Build fallback map: primary → fallback (when fallback entry exists)
+        has_fallback = any(m["model_name"] == "fallback" for m in model_list)
+        fallback_map = [{"primary": ["fallback"]}, {"reasoning": ["fallback"]}] if has_fallback else []
 
         self._router = Router(
             model_list=model_list,
-            fallbacks=fallback_map if fallback_map else [],
+            fallbacks=fallback_map,
             num_retries=2,
             timeout=25,
         )
-        logger.info("litellm_router_initialized",
-                    primary=settings.LITELLM_PRIMARY_MODEL,
-                    fallback=settings.LITELLM_FALLBACK_MODEL if settings.has_gemini else "none")
 
     def _cache_key(self, messages: List[Dict], model: str) -> str:
         payload = json.dumps({"model": model, "messages": messages}, sort_keys=True)
@@ -178,19 +248,19 @@ class LLMService:
         model_alias: str = "primary",
     ) -> AsyncIterator[str]:
         if settings.MOCK_LLM_MODE or not settings.has_any_llm:
-            mock = self._mock_response(messages)
-            for chunk in mock.split(" "):
+            for chunk in self._mock_response(messages).split(" "):
                 yield chunk + " "
             return
 
         self._build_router()
 
         try:
-            async for chunk in await self._router.acompletion(  # type: ignore[union-attr]
+            stream = await self._router.acompletion(  # type: ignore[union-attr]
                 model=model_alias,
                 messages=messages,
                 stream=True,
-            ):
+            )
+            async for chunk in stream:
                 delta = chunk.choices[0].delta.content or ""
                 if delta:
                     yield delta

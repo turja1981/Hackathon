@@ -206,19 +206,52 @@ Frontend runs at `http://localhost:3000`
 
 ### Backend `.env`
 
+Three provider options — set only one:
+
+**Option A — TCS GenAI Lab MaaS (recommended for hackathon)**
+
+| Variable | Value | Description |
+|---|---|---|
+| `GENAILAB_API_KEY` | `sk-…` | TCS GenAI Lab API key |
+| `GENAILAB_API_BASE` | `https://genailab.tcs.in/` | MaaS endpoint |
+| `LITELLM_PRIMARY_MODEL` | `genailab-maas-gpt-4o` | GPT-4o via GenAI Lab |
+| `LITELLM_FALLBACK_MODEL` | `gemini-2.5-flash` | Gemini 2.5 Flash via GenAI Lab |
+| `LITELLM_REASONING_MODEL` | `genailab-maas-gpt-4o` | For summarisation + hypotheses |
+
+**Option B — Direct OpenAI / Gemini**
+
+| Variable | Value | Description |
+|---|---|---|
+| `OPENAI_API_KEY` | `sk-…` | OpenAI API key |
+| `GEMINI_API_KEY` | `AI…` | Google Gemini API key |
+| `LITELLM_PRIMARY_MODEL` | `gpt-4o` | Any OpenAI model |
+| `LITELLM_FALLBACK_MODEL` | `gemini/gemini-1.5-pro` | Gemini fallback |
+
+**Common settings**
+
 | Variable | Default | Description |
 |---|---|---|
-| `OPENAI_API_KEY` | _(none)_ | OpenAI API key for GPT-4o |
-| `GEMINI_API_KEY` | _(none)_ | Google Gemini API key for fallback |
-| `LITELLM_PRIMARY_MODEL` | `gpt-4o` | Primary LLM for reasoning tasks |
-| `LITELLM_FALLBACK_MODEL` | `gemini/gemini-1.5-pro` | Fallback when primary fails |
-| `LITELLM_CACHE_ENABLED` | `true` | Enable in-memory response cache |
+| `LITELLM_CACHE_ENABLED` | `true` | In-memory response cache |
 | `LITELLM_CACHE_TTL` | `3600` | Cache TTL in seconds |
-| `EMBEDDING_MODEL` | `all-MiniLM-L6-v2` | sentence-transformers model (no API key needed) |
-| `FAISS_INDEX_PATH` | `./data/faiss_index` | Where to persist the FAISS index |
+| `EMBEDDING_MODEL` | `all-MiniLM-L6-v2` | Local embeddings (no API key needed) |
+| `FAISS_INDEX_PATH` | `./data/faiss_index` | Persisted FAISS index |
 | `MAX_RETRIEVED_DOCS` | `10` | Candidates before reranking |
-| `RERANK_TOP_K` | `5` | Final docs passed to LLM after reranking |
-| `MOCK_LLM_MODE` | `false` | Return pre-generated responses (no API key needed) |
+| `RERANK_TOP_K` | `5` | Final docs sent to LLM |
+| `MOCK_LLM_MODE` | `false` | Demo mode — no API key needed |
+
+**Available GenAI Lab models (from the platform)**
+
+| Category | Model name |
+|---|---|
+| GPT-4o | `genailab-maas-gpt-4o` |
+| GPT-4.1 | `azure/genailab-maas-gpt-4.1` |
+| GPT-5 mini | `azure/genailab-maas-gpt-5-mini` |
+| Gemini 2.5 Pro | `gemini-2.5-pro` |
+| Gemini 2.5 Flash | `gemini-2.5-flash` |
+| DeepSeek V3 | `genailab-maas-DeepSeek-V3-0324` |
+| DeepSeek R1 | `azure_ai/genailab-maas-DeepSeek-R1` |
+| Llama 4 Maverick | `azure_ai/genailab-maas-Llama-4-Maverick-17B-128E-Instruct-FP8` |
+| Llama 3.3 70B | `azure_ai/genailab-maas-Llama-3.3-70B-Instruct` |
 
 ### Frontend `.env.local`
 
