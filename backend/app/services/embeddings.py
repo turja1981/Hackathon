@@ -9,10 +9,10 @@ from app.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Dimension lookup by model suffix (strips azure/ or openai/ prefix)
+# Dimension lookup — strips provider prefix before matching
 _MODEL_DIMS: dict[str, int] = {
-    "text-embedding-3-large": 3072,
     "genailab-maas-text-embedding-3-large": 3072,
+    "text-embedding-3-large": 3072,
     "text-embedding-3-small": 1536,
     "text-embedding-ada-002": 1536,
     "all-MiniLM-L6-v2": 384,
@@ -20,12 +20,22 @@ _MODEL_DIMS: dict[str, int] = {
     "all-mpnet-base-v2": 768,
 }
 
+_PROVIDER_PREFIXES = ("azure/", "azure_ai/", "openai/")
+
+
+def _strip_prefix(name: str) -> str:
+    for p in _PROVIDER_PREFIXES:
+        if name.startswith(p):
+            return name[len(p):]
+    return name
+
 
 class EmbeddingService:
-    """Embedding service.
+    """Provider-aware embedding service.
 
-    USE_API_EMBEDDINGS=true  → LiteLLM / Azure OpenAI (default, no HuggingFace)
-    USE_API_EMBEDDINGS=false → local sentence-transformers
+    EMBEDDING_PROVIDER=genailab → LiteLLM → GenAI Lab MaaS (Azure-format or OpenAI-compatible)
+    EMBEDDING_PROVIDER=openai   → LiteLLM → direct OpenAI
+    EMBEDDING_PROVIDER=local    → sentence-transformers (no network call)
     """
 
     def __init__(self) -> None:
@@ -33,19 +43,17 @@ class EmbeddingService:
         self._dim: int | None = None
 
     def _dim_from_model_name(self) -> int:
-        # Strip provider prefix (azure/, openai/, etc.)
-        name = settings.EMBEDDING_MODEL.split("/")[-1]
-        return _MODEL_DIMS.get(name, 1536)
+        return _MODEL_DIMS.get(_strip_prefix(settings.EMBEDDING_MODEL), 3072)
 
     @property
     def dim(self) -> int:
         if self._dim is not None:
             return self._dim
-        if settings.USE_API_EMBEDDINGS:
-            self._dim = self._dim_from_model_name()
-        else:
+        if settings.EMBEDDING_PROVIDER.lower() == "local":
             self._load_local()
             self._dim = self._local_model.get_sentence_embedding_dimension()  # type: ignore[union-attr]
+        else:
+            self._dim = self._dim_from_model_name()
         return self._dim
 
     def _load_local(self) -> None:
@@ -64,42 +72,56 @@ class EmbeddingService:
             raise
 
     def encode(self, texts: List[str], normalize: bool = True) -> np.ndarray:
-        if settings.USE_API_EMBEDDINGS:
-            return self._encode_api(texts, normalize)
-        self._load_local()
-        return self._local_model.encode(  # type: ignore[union-attr]
-            texts,
-            normalize_embeddings=normalize,
-            show_progress_bar=False,
-            batch_size=32,
-        )
+        if settings.EMBEDDING_PROVIDER.lower() == "local":
+            self._load_local()
+            return self._local_model.encode(  # type: ignore[union-attr]
+                texts,
+                normalize_embeddings=normalize,
+                show_progress_bar=False,
+                batch_size=32,
+            )
+        return self._encode_api(texts, normalize)
 
     def _encode_api(self, texts: List[str], normalize: bool = True) -> np.ndarray:
-        if not settings.has_any_llm:
-            logger.warning("no_api_key_using_mock_embeddings")
-            return self._encode_mock(texts)
+        provider = settings.EMBEDDING_PROVIDER.lower()
 
         import litellm
 
         if settings.DISABLE_SSL_VERIFY:
             litellm.ssl_verify = False
 
-        # Strip provider prefix from model name and build openai-compatible call.
-        # GenAI Lab is OpenAI-compatible — must NOT use "azure/" prefix (different API format).
-        model_name = settings.EMBEDDING_MODEL
-        if "/" in model_name:
-            # e.g. "openai/genailab-maas-text-embedding-3-large" → keep as-is for litellm routing
-            pass
+        kwargs: dict = {"model": settings.EMBEDDING_MODEL, "input": texts}
+
+        if provider == "genailab":
+            if not settings.GENAILAB_API_KEY:
+                logger.warning("genailab_key_missing_using_mock_embeddings")
+                return self._encode_mock(texts)
+            kwargs.update({
+                "api_key": settings.GENAILAB_API_KEY,
+                "api_base": settings.GENAILAB_API_BASE,
+            })
+            # Azure-format and Azure AI models require api_version
+            model = settings.EMBEDDING_MODEL
+            if model.startswith("azure/") or model.startswith("azure_ai/"):
+                kwargs["api_version"] = settings.LITELLM_API_VERSION
+
+        elif provider == "openai":
+            if not settings.OPENAI_API_KEY:
+                logger.warning("openai_key_missing_using_mock_embeddings")
+                return self._encode_mock(texts)
+            kwargs["api_key"] = settings.OPENAI_API_KEY
+
+        else:
+            logger.warning("unknown_embedding_provider_using_mock", provider=provider)
+            return self._encode_mock(texts)
 
         try:
-            kwargs: dict = {"model": model_name, "input": texts}
-            if settings.GENAILAB_API_KEY:
-                kwargs["api_key"] = settings.GENAILAB_API_KEY
-                kwargs["api_base"] = settings.GENAILAB_API_BASE
-            elif settings.OPENAI_API_KEY:
-                kwargs["api_key"] = settings.OPENAI_API_KEY
-
-            logger.info("encoding_via_api", model=model_name, count=len(texts))
+            logger.info(
+                "encoding_via_api",
+                provider=provider,
+                model=kwargs["model"],
+                count=len(texts),
+            )
             response = litellm.embedding(**kwargs)
             vectors = np.array(
                 [item.embedding for item in response.data], dtype=np.float32
@@ -112,13 +134,13 @@ class EmbeddingService:
 
             self._dim = vectors.shape[1]
             return vectors
+
         except Exception as exc:
-            logger.error("api_embedding_failed_using_mock", error=str(exc))
-            logger.warning("falling_back_to_mock_embeddings")
+            logger.error("api_embedding_failed_using_mock", provider=provider, error=str(exc))
             return self._encode_mock(texts)
 
     def _encode_mock(self, texts: List[str]) -> np.ndarray:
-        """Deterministic mock embeddings (used in MOCK_LLM_MODE with no API key)."""
+        """Deterministic mock embeddings — consistent across calls for the same text."""
         dim = self._dim_from_model_name()
         vectors = []
         for text in texts:

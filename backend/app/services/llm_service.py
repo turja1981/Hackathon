@@ -159,117 +159,110 @@ class LLMService:
                 logger.warning("litellm_cache_init_failed", error=str(e))
 
         model_list: List[Dict] = []
+        provider = settings.LLM_PROVIDER.lower()
+        _common = {
+            "max_tokens": settings.LITELLM_MAX_TOKENS,
+            "temperature": settings.LITELLM_TEMPERATURE,
+        }
 
         # ------------------------------------------------------------------
-        # Priority 1: TCS GenAI Lab MaaS (OpenAI-compatible custom endpoint)
-        # All models (GPT, Gemini, DeepSeek, Llama) are served via one key.
-        # LiteLLM uses "openai/<model>" to call any OpenAI-compatible endpoint.
+        # GenAI Lab MaaS
+        # Primary / reasoning: OpenAI-compatible endpoint (openai/ prefix)
+        # Azure fallback:       Azure-format deployment (azure/ prefix + api_version)
         # ------------------------------------------------------------------
-        if settings.has_genailab:
-            _base_params = {
+        if provider == "genailab":
+            _openai_base = {
+                **_common,
                 "api_key": settings.GENAILAB_API_KEY,
                 "api_base": settings.GENAILAB_API_BASE,
-                "max_tokens": settings.LITELLM_MAX_TOKENS,
-                "temperature": settings.LITELLM_TEMPERATURE,
+            }
+            _azure_base = {
+                **_openai_base,
+                "api_version": settings.LITELLM_API_VERSION,
             }
 
-            # Primary model (e.g. genailab-maas-gpt-4o)
-            model_list.append({
-                "model_name": "primary",
-                "litellm_params": {
-                    "model": f"openai/{settings.LITELLM_PRIMARY_MODEL}",
-                    **_base_params,
-                }
-            })
-
-            # Reasoning model (same or different — e.g. DeepSeek for hypothesis)
-            model_list.append({
-                "model_name": "reasoning",
-                "litellm_params": {
-                    "model": f"openai/{settings.LITELLM_REASONING_MODEL}",
-                    **_base_params,
-                    "temperature": 0.8,
-                }
-            })
-
-            # Fallback model (e.g. gemini-2.5-flash for cost/speed)
-            model_list.append({
-                "model_name": "fallback",
-                "litellm_params": {
-                    "model": f"openai/{settings.LITELLM_FALLBACK_MODEL}",
-                    **_base_params,
-                }
-            })
-
+            model_list = [
+                {
+                    "model_name": "primary",
+                    "litellm_params": {
+                        "model": f"openai/{settings.LITELLM_PRIMARY_MODEL}",
+                        **_openai_base,
+                    },
+                },
+                {
+                    "model_name": "reasoning",
+                    "litellm_params": {
+                        "model": f"openai/{settings.LITELLM_REASONING_MODEL}",
+                        **_openai_base,
+                        "temperature": 0.8,
+                    },
+                },
+                # Azure-format fallback (azure/ or azure_ai/ prefixed model)
+                {
+                    "model_name": "fallback",
+                    "litellm_params": {
+                        "model": settings.LITELLM_AZURE_FALLBACK_MODEL,
+                        **_azure_base,
+                    },
+                },
+            ]
             logger.info(
-                "litellm_genailab_configured",
+                "litellm_provider_genailab",
                 primary=settings.LITELLM_PRIMARY_MODEL,
-                fallback=settings.LITELLM_FALLBACK_MODEL,
+                azure_fallback=settings.LITELLM_AZURE_FALLBACK_MODEL,
                 base=settings.GENAILAB_API_BASE,
             )
 
         # ------------------------------------------------------------------
-        # Priority 2: Direct OpenAI (if no GenAI Lab key)
+        # Direct OpenAI
         # ------------------------------------------------------------------
-        elif settings.has_openai:
-            model_list.append({
-                "model_name": "primary",
-                "litellm_params": {
-                    "model": settings.LITELLM_PRIMARY_MODEL,
-                    "api_key": settings.OPENAI_API_KEY,
-                    "max_tokens": settings.LITELLM_MAX_TOKENS,
-                    "temperature": settings.LITELLM_TEMPERATURE,
-                }
-            })
-            model_list.append({
-                "model_name": "reasoning",
-                "litellm_params": {
-                    "model": settings.LITELLM_REASONING_MODEL,
-                    "api_key": settings.OPENAI_API_KEY,
-                    "max_tokens": settings.LITELLM_MAX_TOKENS,
-                    "temperature": 0.8,
-                }
-            })
-            if settings.has_gemini:
-                model_list.append({
-                    "model_name": "fallback",
+        elif provider == "openai":
+            _base = {**_common, "api_key": settings.OPENAI_API_KEY}
+            model_list = [
+                {
+                    "model_name": "primary",
+                    "litellm_params": {"model": settings.LITELLM_PRIMARY_MODEL, **_base},
+                },
+                {
+                    "model_name": "reasoning",
                     "litellm_params": {
-                        "model": settings.LITELLM_FALLBACK_MODEL,
-                        "api_key": settings.GEMINI_API_KEY,
-                        "max_tokens": settings.LITELLM_MAX_TOKENS,
-                        "temperature": settings.LITELLM_TEMPERATURE,
-                    }
-                })
+                        "model": settings.LITELLM_REASONING_MODEL,
+                        **_base,
+                        "temperature": 0.8,
+                    },
+                },
+            ]
+            logger.info("litellm_provider_openai", primary=settings.LITELLM_PRIMARY_MODEL)
 
         # ------------------------------------------------------------------
-        # Priority 3: Gemini only
+        # Direct Gemini
         # ------------------------------------------------------------------
-        elif settings.has_gemini:
-            model_list.append({
-                "model_name": "primary",
-                "litellm_params": {
-                    "model": settings.LITELLM_FALLBACK_MODEL,
-                    "api_key": settings.GEMINI_API_KEY,
-                    "max_tokens": settings.LITELLM_MAX_TOKENS,
-                    "temperature": settings.LITELLM_TEMPERATURE,
-                }
-            })
-            model_list.append({
-                "model_name": "reasoning",
-                "litellm_params": {
-                    "model": settings.LITELLM_FALLBACK_MODEL,
-                    "api_key": settings.GEMINI_API_KEY,
-                    "max_tokens": settings.LITELLM_MAX_TOKENS,
-                    "temperature": 0.8,
-                }
-            })
+        elif provider == "gemini":
+            _base = {**_common, "api_key": settings.GEMINI_API_KEY}
+            model_list = [
+                {
+                    "model_name": "primary",
+                    "litellm_params": {
+                        "model": f"gemini/{settings.LITELLM_PRIMARY_MODEL}",
+                        **_base,
+                    },
+                },
+                {
+                    "model_name": "reasoning",
+                    "litellm_params": {
+                        "model": f"gemini/{settings.LITELLM_REASONING_MODEL}",
+                        **_base,
+                        "temperature": 0.8,
+                    },
+                },
+            ]
+            logger.info("litellm_provider_gemini", primary=settings.LITELLM_PRIMARY_MODEL)
 
         if not model_list:
-            logger.warning("no_llm_keys_configured",
-                           hint="Set GENAILAB_API_KEY, OPENAI_API_KEY, or GEMINI_API_KEY")
+            logger.warning("no_llm_configured", provider=provider,
+                           hint="Check LLM_PROVIDER and the matching API key")
             return
 
-        # Build fallback map: primary → fallback (when fallback entry exists)
         has_fallback = any(m["model_name"] == "fallback" for m in model_list)
         fallback_map = [{"primary": ["fallback"]}, {"reasoning": ["fallback"]}] if has_fallback else []
 

@@ -8,26 +8,41 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
 
     # -------------------------------------------------------------------------
-    # TCS GenAI Lab MaaS (primary — overrides OpenAI/Gemini when set)
+    # Provider selection  (set exactly ONE; only that provider's key is needed)
+    # -------------------------------------------------------------------------
+    LLM_PROVIDER: str = "genailab"        # genailab | openai | gemini | mock
+    EMBEDDING_PROVIDER: str = "genailab"  # genailab | openai | local
+
+    # -------------------------------------------------------------------------
+    # TCS GenAI Lab MaaS
     # -------------------------------------------------------------------------
     GENAILAB_API_KEY: Optional[str] = None
     GENAILAB_API_BASE: str = "https://genailab.tcs.in/"
 
     # -------------------------------------------------------------------------
-    # Standard API keys (used when GenAI Lab is NOT configured)
+    # Standard API keys (used only when LLM_PROVIDER / EMBEDDING_PROVIDER match)
     # -------------------------------------------------------------------------
     OPENAI_API_KEY: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
 
     # -------------------------------------------------------------------------
-    # LiteLLM routing
-    # Model names for GenAI Lab:   genailab-maas-gpt-4o, gemini-2.5-flash, etc.
-    # Model names for OpenAI:      gpt-4o, gpt-4o-mini, etc.
-    # Model names for Gemini:      gemini/gemini-1.5-pro, etc.
+    # LiteLLM models
+    # GenAI Lab OpenAI-compatible (no prefix): genailab-maas-gpt-4o,
+    #   genailab-maas-DeepSeek-V3-0324, gemini-2.5-flash, gemini-2.5-pro …
+    # GenAI Lab Azure-format (keep azure/ prefix): azure/genailab-maas-gpt-5-mini,
+    #   azure/genailab-maas-gpt-4.1, azure/genailab-maas-gpt-4.1-mini …
+    # GenAI Lab Azure AI (keep azure_ai/ prefix): azure_ai/genailab-maas-DeepSeek-R1,
+    #   azure_ai/genailab-maas-Llama-4-Maverick-17B-128E-Instruct-FP8 …
+    # OpenAI: gpt-4o, gpt-4o-mini, gpt-4.1 …
+    # Gemini: gemini/gemini-2.5-pro, gemini/gemini-2.5-flash …
     # -------------------------------------------------------------------------
     LITELLM_PRIMARY_MODEL: str = "genailab-maas-gpt-4o"
-    LITELLM_FALLBACK_MODEL: str = "gemini-2.5-flash"
     LITELLM_REASONING_MODEL: str = "genailab-maas-gpt-4o"
+    # Azure-format fallback (used when primary/reasoning fail)
+    LITELLM_AZURE_FALLBACK_MODEL: str = "azure/genailab-maas-gpt-5-mini"
+    # api-version required for azure/ and azure_ai/ prefixed model calls
+    LITELLM_API_VERSION: str = "2024-06-01"
+
     LITELLM_CACHE_ENABLED: bool = True
     LITELLM_CACHE_TTL: int = 3600
     LITELLM_MAX_TOKENS: int = 2048
@@ -35,13 +50,12 @@ class Settings(BaseSettings):
 
     # -------------------------------------------------------------------------
     # Embeddings
-    # Use "all-MiniLM-L6-v2" for local (no API key needed)
-    # Use "openai/genailab-maas-text-embedding-3-large" for GenAI Lab (OpenAI-compatible)
+    # genailab (azure-format): azure/genailab-maas-text-embedding-3-large
+    # openai:                   text-embedding-3-large
+    # local (no API key):       all-MiniLM-L6-v2
     # -------------------------------------------------------------------------
-    EMBEDDING_MODEL: str = "openai/genailab-maas-text-embedding-3-large"
+    EMBEDDING_MODEL: str = "azure/genailab-maas-text-embedding-3-large"
     EMBEDDING_DEVICE: str = "cpu"
-    # Set to false to use local sentence-transformers instead of Azure OpenAI
-    USE_API_EMBEDDINGS: bool = True
 
     # -------------------------------------------------------------------------
     # FAISS
@@ -57,16 +71,13 @@ class Settings(BaseSettings):
     PORT: int = 8000
     LOG_LEVEL: str = "info"
 
-    # CORS
     FRONTEND_URL: str = "http://localhost:3000"
 
-    # Feature flags
     MOCK_LLM_MODE: bool = False
 
     # -------------------------------------------------------------------------
-    # Network / Corporate proxy
-    # Set to true on corporate networks with SSL inspection (e.g. TCS)
-    # Disables certificate verification for HuggingFace Hub downloads
+    # Network
+    # Set DISABLE_SSL_VERIFY=true on corporate networks with SSL inspection
     # -------------------------------------------------------------------------
     DISABLE_SSL_VERIFY: bool = False
 
@@ -75,19 +86,28 @@ class Settings(BaseSettings):
     # -------------------------------------------------------------------------
     @property
     def has_genailab(self) -> bool:
-        return bool(self.GENAILAB_API_KEY)
+        return self.LLM_PROVIDER == "genailab" and bool(self.GENAILAB_API_KEY)
 
     @property
     def has_openai(self) -> bool:
-        return bool(self.OPENAI_API_KEY)
+        return self.LLM_PROVIDER == "openai" and bool(self.OPENAI_API_KEY)
 
     @property
     def has_gemini(self) -> bool:
-        return bool(self.GEMINI_API_KEY)
+        return self.LLM_PROVIDER == "gemini" and bool(self.GEMINI_API_KEY)
 
     @property
     def has_any_llm(self) -> bool:
         return self.has_genailab or self.has_openai or self.has_gemini
+
+    @property
+    def has_embedding_api(self) -> bool:
+        p = self.EMBEDDING_PROVIDER.lower()
+        if p == "genailab":
+            return bool(self.GENAILAB_API_KEY)
+        if p == "openai":
+            return bool(self.OPENAI_API_KEY)
+        return False  # local needs no key
 
 
 settings = Settings()
