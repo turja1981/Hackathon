@@ -6,9 +6,10 @@ import { Lightbulb, Loader2 } from 'lucide-react';
 import SearchBar from '@/components/SearchBar';
 import HypothesisPanel from '@/components/HypothesisPanel';
 import AgentStatusTracker from '@/components/AgentStatusTracker';
+import KpiMetricsBar from '@/components/KpiMetricsBar';
 import { api } from '@/lib/api';
 import { useSSE } from '@/lib/hooks/useSSE';
-import type { Hypothesis } from '@/lib/types';
+import type { Hypothesis, KpiMetrics } from '@/lib/types';
 
 function HypothesesContent() {
   const searchParams = useSearchParams();
@@ -22,6 +23,7 @@ function HypothesesContent() {
 
   const hypotheses = (result as { hypotheses?: Hypothesis[] } | null)?.hypotheses ?? [];
   const contextSummary = (result as { context_summary?: string } | null)?.context_summary ?? '';
+  const kpiMetrics = (result as { kpi_metrics?: KpiMetrics } | null)?.kpi_metrics ?? null;
 
   const handleGenerate = async (q: string) => {
     setQuery(q);
@@ -83,6 +85,10 @@ function HypothesesContent() {
                 <span className="font-semibold text-gray-300">Context: </span>
                 {contextSummary.slice(0, 300)}…
               </div>
+            )}
+
+            {kpiMetrics && (
+              <KpiMetricsBar metrics={kpiMetrics} showNovelty />
             )}
 
             {hypotheses.length > 0 && (

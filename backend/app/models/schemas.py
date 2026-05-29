@@ -88,10 +88,18 @@ class HypothesizeRequest(BaseModel):
     focus_area: Optional[str] = None
 
 
+class Citation(BaseModel):
+    paper_id: str
+    paper_title: str
+    claim: str
+
+
 class FeedbackRequest(BaseModel):
     job_id: str
     item_id: str
     feedback_type: FeedbackType
+    # KPI 2: Summary accuracy rating on 1-10 scale (≥ 8.5 target)
+    accuracy_rating: Optional[int] = Field(default=None, ge=1, le=10)
     comment: Optional[str] = None
 
 

@@ -7,14 +7,16 @@ import Link from 'next/link';
 import PaperCard from '@/components/PaperCard';
 import SummaryVisualization from '@/components/SummaryVisualization';
 import AgentStatusTracker from '@/components/AgentStatusTracker';
+import KpiMetricsBar from '@/components/KpiMetricsBar';
 import { api } from '@/lib/api';
 import { useSSE } from '@/lib/hooks/useSSE';
-import type { Paper } from '@/lib/types';
+import type { Citation, KpiMetrics, Paper } from '@/lib/types';
 
 export default function PaperDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [paper, setPaper] = useState<Paper | null>(null);
   const [summaryTriggered, setSummaryTriggered] = useState(false);
+  const [jobId, setJobId] = useState<string | null>(null);
   const { status, events, result, start } = useSSE();
 
   useEffect(() => {
@@ -25,10 +27,17 @@ export default function PaperDetailPage() {
     if (!paper) return;
     setSummaryTriggered(true);
     const job = await api.summarize({ query: paper.title, paper_ids: [paper.id] });
+    setJobId(job.job_id);
     start(job.job_id);
   };
 
-  const summaryResult = result as { summary?: string; key_findings?: string[]; papers_used?: Paper[] } | null;
+  const summaryResult = result as {
+    summary?: string;
+    key_findings?: string[];
+    citations?: Citation[];
+    papers_used?: Paper[];
+    kpi_metrics?: KpiMetrics;
+  } | null;
 
   return (
     <div className="space-y-6">
@@ -65,10 +74,16 @@ export default function PaperDetailPage() {
               <AgentStatusTracker status={status} events={events} />
             )}
 
+            {summaryResult?.kpi_metrics && (
+              <KpiMetricsBar metrics={summaryResult.kpi_metrics} />
+            )}
+
             {summaryResult?.summary && (
               <SummaryVisualization
                 summary={summaryResult.summary}
                 keyFindings={summaryResult.key_findings ?? []}
+                citations={summaryResult.citations ?? []}
+                jobId={jobId ?? undefined}
               />
             )}
           </div>
