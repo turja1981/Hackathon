@@ -24,6 +24,8 @@ class AgentName(str, Enum):
     RANKER = "ranker"
     SUMMARIZER = "summarizer"
     HYPOTHESIS = "hypothesis"
+    GAP_DETECTOR = "gap_detector"
+    CRITIC = "critic"
 
 
 class FeedbackType(str, Enum):
@@ -126,6 +128,33 @@ class SearchResponse(BaseModel):
     job_id: Optional[str] = None
 
 
+class ReasoningStep(BaseModel):
+    paper_id: str
+    paper_title: str
+    finding: str
+    relevance: str
+
+
+class EvidenceScore(BaseModel):
+    overall_score: float         # 0-100
+    supporting_papers_count: int
+    recency_score: float         # 0-1
+    agreement_score: float       # 0-1
+    citation_impact_score: float # 0-1
+    label: str                   # "Strong" | "Moderate" | "Weak"
+
+
+class ResearchGap(BaseModel):
+    id: str
+    gap_description: str
+    area: str
+    opportunity_level: str       # "High" | "Medium" | "Low"
+    missing_connections: List[str] = []
+    suggested_experiments: List[str] = []
+    novelty_score: float = 0.8
+    related_paper_ids: List[str] = []
+
+
 class Hypothesis(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     hypothesis: str
@@ -134,6 +163,9 @@ class Hypothesis(BaseModel):
     novelty_score: float = Field(default=0.8, ge=0.0, le=1.0)
     impact_area: str = ""
     supporting_paper_ids: List[str] = []
+    reasoning_path: List[ReasoningStep] = []
+    evidence_score: Optional[EvidenceScore] = None
+    critic_challenge: str = ""
 
 
 class SummarizeResponse(BaseModel):
@@ -171,6 +203,23 @@ class JobResult(BaseModel):
     result: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
     completed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class GapsRequest(BaseModel):
+    query: str = Field(..., min_length=1, max_length=500)
+    max_gaps: int = Field(default=5, ge=1, le=10)
+
+
+class CopilotRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=2000)
+    conversation_history: List[Dict[str, str]] = Field(default_factory=list)
+
+
+class AdoptionMetrics(BaseModel):
+    papers_processed: int = 0
+    hypotheses_generated: int = 0
+    gaps_identified: int = 0
+    queries_total: int = 0
 
 
 # ---------------------------------------------------------------------------

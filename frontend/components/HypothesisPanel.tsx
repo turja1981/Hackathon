@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, Flag, FlaskConical } from 'lucide-react';
+import { ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, Flag, FlaskConical, AlertTriangle } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { Hypothesis } from '@/lib/types';
 import { api } from '@/lib/api';
+import EvidenceScoreBar from './EvidenceScoreBar';
+import ReasoningPath from './ReasoningPath';
 
 interface Props {
   hypothesis: Hypothesis;
@@ -30,10 +32,7 @@ export default function HypothesisPanel({ hypothesis, jobId, index }: Props) {
   return (
     <div className={clsx('card transition-all', expanded && 'ring-1 ring-sky-500/30')}>
       {/* Header */}
-      <button
-        className="w-full text-left flex items-start gap-3"
-        onClick={() => setExpanded(v => !v)}
-      >
+      <button className="w-full text-left flex items-start gap-3" onClick={() => setExpanded(v => !v)}>
         <div className="shrink-0 flex size-7 items-center justify-center rounded-full bg-sky-500/20 text-sky-400 text-xs font-bold mt-0.5">
           {index + 1}
         </div>
@@ -44,9 +43,16 @@ export default function HypothesisPanel({ hypothesis, jobId, index }: Props) {
               <FlaskConical size={11} />
               {hypothesis.impact_area}
             </span>
-            <span className={clsx('font-semibold', noveltyColor)}>
-              {noveltyPct}% novelty
-            </span>
+            <span className={clsx('font-semibold', noveltyColor)}>{noveltyPct}% novelty</span>
+            {hypothesis.evidence_score && (
+              <span className={clsx(
+                'font-semibold',
+                hypothesis.evidence_score.label === 'Strong' ? 'text-green-400' :
+                hypothesis.evidence_score.label === 'Moderate' ? 'text-yellow-400' : 'text-red-400'
+              )}>
+                Evidence: {hypothesis.evidence_score.label}
+              </span>
+            )}
           </div>
         </div>
         {expanded ? <ChevronUp size={16} className="text-gray-500 shrink-0 mt-1" /> : <ChevronDown size={16} className="text-gray-500 shrink-0 mt-1" />}
@@ -83,6 +89,26 @@ export default function HypothesisPanel({ hypothesis, jobId, index }: Props) {
                   </li>
                 ))}
               </ol>
+            </div>
+          )}
+
+          {/* Evidence Score Bar */}
+          {hypothesis.evidence_score && (
+            <EvidenceScoreBar score={hypothesis.evidence_score} />
+          )}
+
+          {/* Reasoning Path */}
+          {hypothesis.reasoning_path && hypothesis.reasoning_path.length > 0 && (
+            <ReasoningPath steps={hypothesis.reasoning_path} hypothesis={hypothesis.hypothesis} />
+          )}
+
+          {/* Critic Challenge */}
+          {hypothesis.critic_challenge && (
+            <div className="glass p-3 border border-yellow-500/20 bg-yellow-500/5">
+              <h4 className="text-xs font-semibold text-yellow-400 uppercase tracking-wide mb-2 flex items-center gap-1">
+                <AlertTriangle size={11} /> Critic Challenge
+              </h4>
+              <p className="text-sm text-gray-300 leading-relaxed italic">{hypothesis.critic_challenge}</p>
             </div>
           )}
 

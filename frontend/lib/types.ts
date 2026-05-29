@@ -16,6 +16,42 @@ export interface Paper {
   rerank_score?: number;
 }
 
+export interface ReasoningStep {
+  paper_id: string;
+  paper_title: string;
+  finding: string;
+  relevance: string;
+}
+
+export interface EvidenceScore {
+  overall_score: number;
+  supporting_papers_count: number;
+  recency_score: number;
+  agreement_score: number;
+  citation_impact_score: number;
+  label: 'Strong' | 'Moderate' | 'Weak';
+}
+
+export interface ResearchGap {
+  id: string;
+  gap_description: string;
+  area: string;
+  opportunity_level: 'High' | 'Medium' | 'Low';
+  missing_connections: string[];
+  suggested_experiments: string[];
+  novelty_score: number;
+  related_paper_ids: string[];
+}
+
+export interface CopilotMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  papers?: Paper[];
+  gaps?: ResearchGap[];
+  hypotheses?: Hypothesis[];
+  timestamp: string;
+}
+
 export interface Hypothesis {
   id: string;
   hypothesis: string;
@@ -24,6 +60,9 @@ export interface Hypothesis {
   novelty_score: number;
   impact_area: string;
   supporting_paper_ids: string[];
+  reasoning_path?: ReasoningStep[];
+  evidence_score?: EvidenceScore;
+  critic_challenge?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -66,7 +105,7 @@ export interface JobResult {
   job_id: string;
   status: string;
   result?: {
-    type: 'search' | 'summarize' | 'hypothesize';
+    type: 'search' | 'summarize' | 'hypothesize' | 'gaps';
     query: string;
     papers?: Paper[];
     total?: number;
@@ -76,6 +115,8 @@ export interface JobResult {
     papers_used?: Paper[];
     hypotheses?: Hypothesis[];
     context_summary?: string;
+    research_gaps?: ResearchGap[];
+    papers_analyzed?: number;
     kpi_metrics?: KpiMetrics;
   };
   error?: string;
@@ -100,7 +141,20 @@ export interface KpiMetrics {
   avg_novelty_score?: number;
   avg_novelty_pct?: number;
   novelty_target_met?: boolean;
+  gap_count?: number;
+  gap_target_met?: boolean;
+  gap_detection_rate?: number;
 }
+
+export interface AdoptionMetrics {
+  papers_processed: number;
+  hypotheses_generated: number;
+  gaps_identified: number;
+  queries_total: number;
+
+}
+
+export type AgentName = 'orchestrator' | 'search' | 'ranker' | 'summarizer' | 'hypothesis' | 'gap_detector' | 'critic';
 
 export interface FeedbackRequest {
   job_id: string;
@@ -122,8 +176,6 @@ export interface HealthResponse {
 // ---------------------------------------------------------------------------
 // SSE / streaming types
 // ---------------------------------------------------------------------------
-
-export type AgentName = 'orchestrator' | 'search' | 'ranker' | 'summarizer' | 'hypothesis';
 
 export interface AgentEvent {
   agent: AgentName;

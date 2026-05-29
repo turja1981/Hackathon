@@ -15,7 +15,7 @@ interface Props {
 export default function SearchBar({
   onSearch,
   loading = false,
-  placeholder = 'Search life sciences papers… e.g. "CRISPR Alzheimer's treatment"',
+  placeholder = 'Search life sciences papers… e.g. "CRISPR Alzheimer treatment"',
   className,
   initialValue = '',
 }: Props) {

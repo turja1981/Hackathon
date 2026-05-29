@@ -1,4 +1,5 @@
 import type {
+  AdoptionMetrics,
   FeedbackRequest,
   HealthResponse,
   HypothesizeRequest,
@@ -57,6 +58,18 @@ export const api = {
 
   feedback: (body: FeedbackRequest) =>
     request<{ status: string }>('/api/v1/feedback', { method: 'POST', body: JSON.stringify(body) }),
+
+  detectGaps: (body: { query: string; max_gaps?: number }) =>
+    request<JobStartResponse>('/api/v1/gaps', { method: 'POST', body: JSON.stringify(body) }),
+
+  copilot: (body: { message: string; conversation_history?: { role: string; content: string }[] }) =>
+    request<JobStartResponse & { detected_intent: string }>('/api/v1/copilot', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  getAdoptionMetrics: () =>
+    request<AdoptionMetrics>('/api/v1/metrics/adoption'),
 
   streamUrl: (jobId: string) => `${BASE_URL}/api/v1/stream/${jobId}`,
 };

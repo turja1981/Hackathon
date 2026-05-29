@@ -1,12 +1,13 @@
 'use client';
 
-import { Clock, TrendingDown, Star, FlaskConical, CheckCircle, XCircle } from 'lucide-react';
+import { Clock, TrendingDown, Star, FlaskConical, GitBranch, CheckCircle, XCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { KpiMetrics } from '@/lib/types';
 
 interface Props {
   metrics: KpiMetrics;
   showNovelty?: boolean;
+  showGaps?: boolean;
 }
 
 interface KpiPill {
@@ -17,7 +18,7 @@ interface KpiPill {
   target: string;
 }
 
-export default function KpiMetricsBar({ metrics, showNovelty = false }: Props) {
+export default function KpiMetricsBar({ metrics, showNovelty = false, showGaps = false }: Props) {
   const pills: KpiPill[] = [
     {
       icon: Clock,
@@ -49,6 +50,16 @@ export default function KpiMetricsBar({ metrics, showNovelty = false }: Props) {
       value: `${metrics.avg_novelty_pct}%`,
       met: metrics.novelty_target_met ?? false,
       target: '≥ 75% target',
+    });
+  }
+
+  if (showGaps && metrics.gap_count !== undefined) {
+    pills.push({
+      icon: GitBranch,
+      label: 'Research Gaps Found',
+      value: `${metrics.gap_count} gaps`,
+      met: metrics.gap_target_met ?? false,
+      target: '≥ 3 target',
     });
   }
 

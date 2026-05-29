@@ -6,7 +6,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import ingest, papers, search, summarize, hypothesize, stream, feedback
+from app.api.v1 import ingest, papers, search, summarize, hypothesize, stream, feedback, gaps, copilot, metrics
 from app.config import settings
 from app.models.schemas import HealthResponse
 from app.services.vector_store import vector_store
@@ -28,12 +28,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Life Sciences AI - Research Paper Summarization & Hypothesis Generation",
+    title="BioMind AI — Research Discovery Platform",
     description=(
-        "Production-grade multi-agent system for life sciences researchers. "
-        "Powered by LangGraph, LiteLLM (GPT-4o / Gemini 1.5 Pro), and FAISS."
+        "Production-grade 7-agent AI system for autonomous life sciences research discovery. "
+        "Cross-paper reasoning, gap detection, evidence scoring, and explainable hypotheses. "
+        "Powered by LangGraph, LiteLLM (GPT-4o / Gemini 2.5), and FAISS."
     ),
-    version="1.0.0",
+    version="2.0.0",
     lifespan=lifespan,
 )
 
@@ -54,6 +55,9 @@ app.include_router(summarize.router, prefix=PREFIX, tags=["Summarize"])
 app.include_router(hypothesize.router, prefix=PREFIX, tags=["Hypothesize"])
 app.include_router(stream.router, prefix=PREFIX, tags=["Stream"])
 app.include_router(feedback.router, prefix=PREFIX, tags=["Feedback"])
+app.include_router(gaps.router, prefix=PREFIX, tags=["Gaps"])
+app.include_router(copilot.router, prefix=PREFIX, tags=["Copilot"])
+app.include_router(metrics.router, prefix=PREFIX, tags=["Metrics"])
 
 
 @app.get("/api/v1/health", response_model=HealthResponse, tags=["Health"])
@@ -69,4 +73,4 @@ async def health():
 
 @app.get("/", include_in_schema=False)
 async def root():
-    return {"message": "Life Sciences AI API", "docs": "/docs", "health": "/api/v1/health"}
+    return {"message": "BioMind AI — Research Discovery Platform", "docs": "/docs", "health": "/api/v1/health"}

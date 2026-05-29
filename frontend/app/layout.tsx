@@ -3,9 +3,9 @@ import './globals.css';
 import Navbar from '@/components/Navbar';
 
 export const metadata: Metadata = {
-  title: 'LifeSci AI – Research Paper Summarization & Hypothesis Generation',
+  title: 'BioMind AI — Research Discovery Platform',
   description:
-    'AI-powered life sciences research tool. Search papers, get instant summaries, and generate novel hypotheses using multi-agent AI.',
+    'Autonomous AI research discovery platform for life sciences. Cross-paper reasoning, gap detection, evidence scoring, and explainable hypothesis generation.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

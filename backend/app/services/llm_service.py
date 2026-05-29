@@ -33,7 +33,12 @@ _MOCK_HYPOTHESES = [
         ],
         "novelty_score": 0.92,
         "impact_area": "Neurodegeneration / Gene Therapy",
-        "supporting_paper_ids": ["paper_001", "paper_002"]
+        "supporting_paper_ids": ["paper_001", "paper_002"],
+        "reasoning_path": [
+            {"paper_id": "paper_001", "paper_title": "CRISPR-Cas9 Gene Editing in iPSC-Derived Neurons", "finding": "89% editing efficiency in motor neurons with minimal off-target effects", "relevance": "Establishes feasibility of CRISPR in neuronal context"},
+            {"paper_id": "paper_002", "paper_title": "mRNA Vaccine Platform for Cancer Immunotherapy", "finding": "mRNA delivery achieves transient immune modulation without genomic integration", "relevance": "Provides complementary immune priming mechanism"}
+        ],
+        "agreement_score": 0.82
     },
     {
         "id": "hyp_002",
@@ -46,7 +51,12 @@ _MOCK_HYPOTHESES = [
         ],
         "novelty_score": 0.88,
         "impact_area": "Neurodegeneration / Biomarker Discovery",
-        "supporting_paper_ids": ["paper_003", "paper_001"]
+        "supporting_paper_ids": ["paper_003", "paper_001"],
+        "reasoning_path": [
+            {"paper_id": "paper_003", "paper_title": "Single-Cell RNA Sequencing Reveals Novel Microglia Subtypes", "finding": "12 distinct microglia sub-populations identified with disease-stage-specific markers", "relevance": "Provides the transcriptomic signatures that could serve as biomarkers"},
+            {"paper_id": "paper_001", "paper_title": "CRISPR-Cas9 Gene Editing in iPSC-Derived Neurons", "finding": "APOE4 variant shows elevated neuroinflammatory gene expression", "relevance": "Links genetic risk to microglial activation patterns"}
+        ],
+        "agreement_score": 0.78
     },
     {
         "id": "hyp_003",
@@ -59,7 +69,65 @@ _MOCK_HYPOTHESES = [
         ],
         "novelty_score": 0.85,
         "impact_area": "Oncology / Drug Discovery",
-        "supporting_paper_ids": ["paper_004", "paper_006"]
+        "supporting_paper_ids": ["paper_004", "paper_006"],
+        "reasoning_path": [
+            {"paper_id": "paper_004", "paper_title": "Graph Neural Networks for Drug-Target Interaction Prediction", "finding": "GNN achieves 94% AUC on protein-ligand binding prediction", "relevance": "Demonstrates GNN superiority for drug repurposing tasks"},
+            {"paper_id": "paper_006", "paper_title": "Pancreatic Cancer Stroma Reprogramming", "finding": "Shared KRAS-MAPK pathway dysregulation between pediatric and adult cancers", "relevance": "Establishes molecular basis for cross-cancer drug repurposing"}
+        ],
+        "agreement_score": 0.75
+    }
+]
+
+_MOCK_GAPS = [
+    {
+        "id": "gap_001",
+        "gap_description": "No studies examine combined CRISPR + mRNA therapeutic delivery for simultaneous gene correction and immune priming in ALS motor neurons",
+        "area": "Gene Therapy / Neurodegeneration",
+        "opportunity_level": "High",
+        "missing_connections": ["CRISPR delivery in motor neurons", "mRNA immune modulation in CNS", "ALS therapeutic combinations"],
+        "suggested_experiments": ["Co-delivery lipid nanoparticle formulation study", "iPSC motor neuron combined therapy assay"],
+        "novelty_score": 0.91,
+        "related_paper_ids": ["paper_001", "paper_002", "paper_009"]
+    },
+    {
+        "id": "gap_002",
+        "gap_description": "The relationship between gut microbiome composition and CAR-T cell therapy efficacy in hematological malignancies remains unexplored",
+        "area": "Immunotherapy / Microbiome",
+        "opportunity_level": "High",
+        "missing_connections": ["Microbiome-immune axis modulation", "CAR-T exhaustion mechanisms", "Pre-treatment microbiome profiling"],
+        "suggested_experiments": ["Longitudinal microbiome profiling in CAR-T patients", "Germ-free mouse model with CAR-T transfer"],
+        "novelty_score": 0.88,
+        "related_paper_ids": ["paper_007", "paper_002"]
+    },
+    {
+        "id": "gap_003",
+        "gap_description": "Spatial transcriptomics has not been applied to map microglial activation gradients in early-stage Alzheimer's disease tissue at sub-cellular resolution",
+        "area": "Neuroscience / Spatial Genomics",
+        "opportunity_level": "Medium",
+        "missing_connections": ["Spatial resolution of neuroinflammation", "Single-cell Alzheimer's atlas integration", "Microglial polarity mapping"],
+        "suggested_experiments": ["10x Visium HD on Alzheimer's brain slices", "Integration with single-nucleus RNA-seq data"],
+        "novelty_score": 0.79,
+        "related_paper_ids": ["paper_001", "paper_003", "paper_010"]
+    },
+    {
+        "id": "gap_004",
+        "gap_description": "No benchmark exists comparing graph neural networks vs. molecular dynamics for predicting allosteric drug binding sites in IDH-mutant cancers",
+        "area": "Computational Chemistry / Oncology",
+        "opportunity_level": "Medium",
+        "missing_connections": ["Allosteric site prediction benchmarks", "GNN-MD hybrid approaches", "IDH mutant cancer therapeutic targets"],
+        "suggested_experiments": ["Build standardized allosteric site benchmark dataset", "Head-to-head GNN vs MD comparison on IDH1/2 mutants"],
+        "novelty_score": 0.76,
+        "related_paper_ids": ["paper_004", "paper_006"]
+    },
+    {
+        "id": "gap_005",
+        "gap_description": "Lipid nanoparticle formulations optimized for pancreatic stellate cell targeting to enable stroma remodeling prior to chemotherapy have not been characterized",
+        "area": "Drug Delivery / Pancreatic Cancer",
+        "opportunity_level": "High",
+        "missing_connections": ["LNP tropism for stellate cells", "Stroma-targeting delivery strategies", "Pre-conditioning for chemotherapy"],
+        "suggested_experiments": ["LNP surface modification screen for stellate cell uptake", "In vivo stroma remodeling + gemcitabine combination study"],
+        "novelty_score": 0.85,
+        "related_paper_ids": ["paper_006", "paper_009"]
     }
 ]
 
@@ -272,6 +340,10 @@ class LLMService:
         last = messages[-1]["content"].lower() if messages else ""
         if "hypothes" in last:
             return json.dumps(_MOCK_HYPOTHESES)
+        if "gap" in last or "unexplored" in last or "missing_connections" in last:
+            return json.dumps(_MOCK_GAPS)
+        if "critic" in last or "counter-argument" in last or "critique" in last:
+            return json.dumps({h["id"]: "The proposed mechanism requires direct experimental validation; correlation in the cited studies does not confirm causation in the target cell type." for h in _MOCK_HYPOTHESES})
         if "rank" in last:
             return json.dumps([{"id": "paper_001", "score": 0.95}, {"id": "paper_002", "score": 0.88}])
         return _MOCK_SUMMARY
