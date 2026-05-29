@@ -50,6 +50,10 @@ class Paper(BaseModel):
     publication_date: Optional[str] = None
     score: Optional[float] = None
     rerank_score: Optional[float] = None
+    # PubMed-specific fields
+    pmid: Optional[str] = None
+    url: Optional[str] = None        # e.g. https://pubmed.ncbi.nlm.nih.gov/{pmid}/
+    source: Optional[str] = None     # "pubmed" | "uploaded" | None (static)
 
 
 class PaperIngest(BaseModel):

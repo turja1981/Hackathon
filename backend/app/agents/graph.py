@@ -11,6 +11,7 @@ from app.config import settings
 from app.models.schemas import AgentName, JobStatus
 from app.services.job_store import job_store
 from app.services.llm_service import llm_service, _MOCK_HYPOTHESES, _MOCK_SUMMARY, _MOCK_GAPS
+from app.services.pubmed import pubmed_service
 from app.services.vector_store import vector_store
 from app.utils.logging import get_logger
 
@@ -73,15 +74,33 @@ async def orchestrate_node(state: AgentState) -> AgentState:
 # ---------------------------------------------------------------------------
 
 async def search_node(state: AgentState) -> AgentState:
-    _publish(state, AgentName.SEARCH, "Searching scientific papers...")
+    _publish(state, AgentName.SEARCH, "Fetching papers from PubMed...")
     query = state["query"]
 
     if state.get("paper_ids"):
+        # Explicit paper ID list — skip PubMed fetch
         papers = vector_store.get_by_ids(state["paper_ids"])
     else:
+        # Fetch live results from PubMed for this specific query
+        pubmed_papers = await pubmed_service.search(query)
+        if pubmed_papers:
+            # Only index papers not already in the vector store (dedup by ID)
+            new_papers = [p for p in pubmed_papers if not vector_store.get_by_id(p["id"])]
+            if new_papers:
+                await asyncio.to_thread(vector_store.add_papers, new_papers)
+                _publish(
+                    state, AgentName.SEARCH,
+                    f"Indexed {len(new_papers)} new PubMed papers",
+                    {"new_papers": len(new_papers), "total_fetched": len(pubmed_papers)},
+                )
+
         papers = await asyncio.to_thread(vector_store.search, query, settings.MAX_RETRIEVED_DOCS)
 
-    _publish(state, AgentName.SEARCH, f"Found {len(papers)} candidate papers", {"count": len(papers)})
+    _publish(
+        state, AgentName.SEARCH,
+        f"Found {len(papers)} candidate papers",
+        {"count": len(papers), "source": "pubmed+index"},
+    )
     return {**state, "retrieved_papers": papers}
 
 

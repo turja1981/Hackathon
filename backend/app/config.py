@@ -76,6 +76,15 @@ class Settings(BaseSettings):
     MOCK_LLM_MODE: bool = False
 
     # -------------------------------------------------------------------------
+    # PubMed / NCBI E-utilities
+    # PUBMED_API_KEY is optional — without it rate limit is 3 req/s (fine for demos)
+    # Register free at https://www.ncbi.nlm.nih.gov/account/ for 10 req/s
+    # -------------------------------------------------------------------------
+    PUBMED_ENABLED: bool = True
+    PUBMED_API_KEY: Optional[str] = None
+    PUBMED_MAX_RESULTS: int = 20   # papers fetched per query from PubMed
+
+    # -------------------------------------------------------------------------
     # Network
     # Set DISABLE_SSL_VERIFY=true on corporate networks with SSL inspection
     # -------------------------------------------------------------------------

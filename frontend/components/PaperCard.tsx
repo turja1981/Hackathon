@@ -63,6 +63,23 @@ export default function PaperCard({ paper, showScore = false }: Props) {
             DOI
           </a>
         )}
+        {paper.url && !paper.doi && (
+          <a
+            href={paper.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-green-500 hover:text-green-400 transition-colors"
+            onClick={e => e.stopPropagation()}
+          >
+            <ExternalLink size={11} />
+            PubMed
+          </a>
+        )}
+        {paper.source === 'pubmed' && (
+          <span className="badge bg-green-900/30 text-green-400 border border-green-700/30">
+            PubMed
+          </span>
+        )}
       </div>
 
       {/* Abstract preview */}

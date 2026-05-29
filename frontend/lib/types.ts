@@ -14,6 +14,10 @@ export interface Paper {
   publication_date?: string;
   score?: number;
   rerank_score?: number;
+  // PubMed fields
+  pmid?: string;
+  url?: string;      // https://pubmed.ncbi.nlm.nih.gov/{pmid}/
+  source?: string;   // 'pubmed' | 'uploaded' | undefined
 }
 
 export interface ReasoningStep {
