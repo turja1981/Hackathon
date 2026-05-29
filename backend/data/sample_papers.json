@@ -1,0 +1,112 @@
+[
+  {
+    "id": "paper_001",
+    "title": "CRISPR-Cas9 Gene Editing in Alzheimer's Disease: Targeting APOE4 Variants",
+    "authors": ["Smith, J.A.", "Chen, L.", "Rodriguez, M."],
+    "journal": "Nature Neuroscience",
+    "year": 2024,
+    "doi": "10.1038/nn.2024.001",
+    "abstract": "Alzheimer's disease (AD) affects over 50 million people worldwide, with the APOE4 allele conferring significant genetic risk. We developed a CRISPR-Cas9 based approach to correct APOE4 to the neutral APOE3 variant in human iPSC-derived neurons. Our results demonstrate 89% editing efficiency with minimal off-target effects (<0.1%), reduced amyloid-beta aggregation by 67%, and improved neuronal survival by 43% compared to controls. Single-cell RNA sequencing revealed restoration of lipid metabolism pathways disrupted by APOE4. This study provides proof-of-concept for in vivo gene editing as a therapeutic strategy for AD, with lipid nanoparticle delivery enabling CNS penetration in a primate model.",
+    "keywords": ["CRISPR", "Alzheimer's disease", "APOE4", "gene editing", "neurons", "iPSC"],
+    "publication_date": "2024-03-15"
+  },
+  {
+    "id": "paper_002",
+    "title": "Personalized mRNA Cancer Vaccines: Phase II Trial Results in Advanced Melanoma",
+    "authors": ["Johnson, K.R.", "Park, S.Y.", "Williams, D.T.", "Nguyen, H."],
+    "journal": "New England Journal of Medicine",
+    "year": 2024,
+    "doi": "10.1056/NEJMoa2024.002",
+    "abstract": "Personalized mRNA vaccines encoding tumor-specific neoantigens represent a breakthrough in cancer immunotherapy. We conducted a Phase II randomized controlled trial in 156 advanced melanoma patients comparing personalized mRNA vaccine plus pembrolizumab versus pembrolizumab alone. The vaccine group showed 78% objective response rate versus 45% in the control arm. Complete responses were observed in 31% of vaccine recipients. The vaccine was manufactured in 28 days from tumor biopsy using an AI-driven neoantigen prediction pipeline. Treatment-related adverse events were manageable. These results establish personalized mRNA vaccines as a paradigm-shifting approach to solid tumor immunotherapy.",
+    "keywords": ["mRNA vaccine", "melanoma", "neoantigen", "immunotherapy", "pembrolizumab", "precision oncology"],
+    "publication_date": "2024-05-20"
+  },
+  {
+    "id": "paper_003",
+    "title": "Single-Cell RNA Sequencing Reveals Novel Microglia Sub-populations in Neuroinflammation",
+    "authors": ["Liu, X.", "Patel, A.K.", "Hoffman, R.", "Yamamoto, T."],
+    "journal": "Cell",
+    "year": 2024,
+    "doi": "10.1016/j.cell.2024.003",
+    "abstract": "Neuroinflammation is a hallmark of multiple neurodegenerative diseases, yet the cellular heterogeneity of brain-resident immune cells remains poorly characterized. Using single-cell RNA sequencing of 485,000 microglia from human post-mortem brain tissue across 12 neurological conditions, we identified 12 novel microglia sub-populations including disease-associated microglia (DAM), interferon-responsive microglia (IRM), and a previously unknown proliferative microglia state (ProM). ProM cells show unique metabolic reprogramming and phagocytic activity. Trajectory analysis reveals that ProM represents a transitional state between homeostatic and DAM phenotypes. These findings provide a comprehensive atlas of microglial states and identify new therapeutic targets for neuroinflammatory diseases.",
+    "keywords": ["single-cell RNA-seq", "microglia", "neuroinflammation", "neurodegenerative disease", "cell atlas"],
+    "publication_date": "2024-01-08"
+  },
+  {
+    "id": "paper_004",
+    "title": "Graph Neural Networks for Drug-Target Interaction Prediction in Multi-Omics Data",
+    "authors": ["Zhang, W.", "Okonkwo, C.", "Martinez, P.", "Larsson, E."],
+    "journal": "Nature Methods",
+    "year": 2023,
+    "doi": "10.1038/nmeth.2023.004",
+    "abstract": "Accurate prediction of drug-target interactions (DTI) is a critical bottleneck in drug discovery. We present DrugGNN, a heterogeneous graph neural network that integrates protein-protein interactions, drug chemical structures, genomics, proteomics, and transcriptomics data within a unified knowledge graph of 2.4 million nodes and 18 million edges. DrugGNN achieves AUROC of 0.97 on the benchmark ChEMBL dataset, outperforming state-of-the-art methods by 12%. Applied to 4,200 FDA-approved drugs against 847 understudied cancer targets, we identified 23 high-confidence repurposing candidates. Three candidates were experimentally validated in patient-derived organoids, showing IC50 values in the nanomolar range. DrugGNN reduces initial drug-target screening from months to 72 hours.",
+    "keywords": ["graph neural network", "drug discovery", "drug repurposing", "multi-omics", "protein interaction"],
+    "publication_date": "2023-11-12"
+  },
+  {
+    "id": "paper_005",
+    "title": "Long-Read Sequencing Resolves Complex Structural Variants in ALS Patients",
+    "authors": ["Anderson, B.L.", "Tanaka, M.", "Osei, K.A."],
+    "journal": "Nature Genetics",
+    "year": 2024,
+    "doi": "10.1038/ng.2024.005",
+    "abstract": "Amyotrophic lateral sclerosis (ALS) has a complex genetic architecture, with 30% of familial cases and 10% of sporadic cases carrying known causative mutations. Previous short-read sequencing studies missed large structural variants (SVs) due to repetitive regions. Using Oxford Nanopore long-read sequencing on 1,200 ALS patients and 800 controls, we detected 3.8 times more SVs than previous studies. We identified 47 ALS-associated SVs, including expansions in C9orf72, ATXN2, and a novel expansion in the NIPA1 locus affecting 8.2% of sporadic ALS cases. Phase-resolved haplotypes revealed complex compound heterozygous variants missed by standard analysis. These findings redefine the genetic architecture of ALS and provide immediate diagnostic value.",
+    "keywords": ["ALS", "structural variants", "long-read sequencing", "C9orf72", "neurodegeneration", "genomics"],
+    "publication_date": "2024-02-28"
+  },
+  {
+    "id": "paper_006",
+    "title": "Organoid-Based Drug Screening Platform for Pancreatic Cancer Chemoresistance",
+    "authors": ["Brown, S.K.", "Kim, J.H.", "Gonzalez, R.", "Sato, T."],
+    "journal": "Cancer Cell",
+    "year": 2023,
+    "doi": "10.1016/j.ccell.2023.006",
+    "abstract": "Pancreatic ductal adenocarcinoma (PDAC) has a 5-year survival rate below 12% due to late diagnosis and chemoresistance. We developed a patient-derived organoid (PDO) biobank from 312 PDAC patients and created an automated high-throughput screening platform testing 4,800 drug combinations. Machine learning analysis of drug response patterns revealed 6 molecular subtypes of PDAC with distinct chemosensitivity profiles. A Wnt pathway inhibitor plus gemcitabine combination showed synergistic activity in 40% of PDOs corresponding to a mesenchymal subtype. Patients in the matched cohort receiving this combination showed 2.3-fold improvement in progression-free survival. This study establishes PDOs as predictive biomarkers for personalized PDAC therapy.",
+    "keywords": ["pancreatic cancer", "organoids", "drug screening", "chemoresistance", "precision medicine"],
+    "publication_date": "2023-09-05"
+  },
+  {
+    "id": "paper_007",
+    "title": "Gut Microbiome Modulation Enhances Immune Checkpoint Inhibitor Response",
+    "authors": ["Fernandez, M.", "Wu, L.", "Johansson, K.", "Patel, R."],
+    "journal": "Science",
+    "year": 2024,
+    "doi": "10.1126/science.2024.007",
+    "abstract": "The gut microbiome significantly influences anti-tumor immunity, yet mechanisms connecting microbial composition to immune checkpoint inhibitor (ICI) efficacy remain unclear. We performed longitudinal metagenomic profiling of 680 cancer patients treated with anti-PD-1 therapy, identifying a 'responsive microbiome signature' (RMS) characterized by enrichment of Akkermansia muciniphila, Faecalibacterium prausnitzii, and Bifidobacterium species. Germ-free mice colonized with RMS showed 3.2-fold higher ICI response rates. A randomized trial of fecal microbiota transplantation (FMT) from ICI responders to non-responders resulted in 32% of non-responders becoming responders. Mechanistically, RMS bacteria promote CXCL10 secretion, driving CD8+ T cell tumor infiltration.",
+    "keywords": ["gut microbiome", "immunotherapy", "PD-1", "fecal microbiota transplantation", "anti-tumor immunity"],
+    "publication_date": "2024-04-11"
+  },
+  {
+    "id": "paper_008",
+    "title": "AI-Driven Protein Structure Prediction Enables Rapid Antibody Engineering",
+    "authors": ["Lee, H.J.", "Kumar, V.", "Olawale, F.", "Thompson, J."],
+    "journal": "Nature Biotechnology",
+    "year": 2024,
+    "doi": "10.1038/nbt.2024.008",
+    "abstract": "Antibody engineering traditionally requires lengthy iterative cycles of design, expression, and testing. We present AbDesign, an AI system combining AlphaFold2 structure prediction, diffusion-based CDR loop generation, and reinforcement learning optimization to design antibodies with specified binding properties. AbDesign generates 10,000 antibody candidates in 4 hours, screens them computationally for stability and specificity, and identifies the top 50 for experimental validation. Applied to SARS-CoV-2 variants, AbDesign produced broad-spectrum neutralizing antibodies with sub-nanomolar affinity against 8 variants including immune-evasive strains. The pipeline reduces antibody development from 18 months to 6 weeks while achieving 73% experimental success rate.",
+    "keywords": ["antibody engineering", "AlphaFold", "protein design", "AI drug discovery", "SARS-CoV-2"],
+    "publication_date": "2024-06-03"
+  },
+  {
+    "id": "paper_009",
+    "title": "Lipid Nanoparticle Optimization for CNS Gene Therapy Delivery",
+    "authors": ["Zhao, Q.", "Reyes, A.", "Nakamura, S.", "Fischer, G."],
+    "journal": "Advanced Materials",
+    "year": 2023,
+    "doi": "10.1002/adma.2023.009",
+    "abstract": "Delivering therapeutic nucleic acids to the central nervous system remains a major challenge for gene therapy. We developed a systematic screening approach for ionizable lipid nanoparticles (LNPs) optimized for CNS delivery, testing 1,200 lipid formulations in a mouse brain transfection assay. Machine learning optimization identified 3 lead LNP formulations with 8-fold improved brain penetration compared to standard MC3 LNPs. The lead LNP (CNS-LNP7) achieves 67% transfection efficiency in cortical neurons after intrathecal injection with minimal liver off-targeting. Applied to CRISPR-Cas9 delivery for huntingtin knockdown in HD mice, CNS-LNP7 reduced mutant HTT protein by 84% in striatum and improved motor function.",
+    "keywords": ["lipid nanoparticles", "CNS delivery", "gene therapy", "CRISPR", "Huntington's disease"],
+    "publication_date": "2023-12-20"
+  },
+  {
+    "id": "paper_010",
+    "title": "Spatial Transcriptomics Maps Tumor Microenvironment Architecture in Breast Cancer",
+    "authors": ["Moreau, C.", "Singh, P.", "O'Brien, M.", "Xu, Y."],
+    "journal": "Nature Cancer",
+    "year": 2024,
+    "doi": "10.1038/s43018-2024-010",
+    "abstract": "Tumor-immune interactions are spatially organized within the tumor microenvironment (TME), yet bulk RNA-seq cannot capture this spatial context. We applied 10x Genomics Visium spatial transcriptomics to 245 treatment-naive breast cancer biopsies, creating a spatial atlas of TME organization across 4 molecular subtypes. We identified 8 spatially defined TME archetypes that predict pathological complete response to neoadjuvant chemotherapy with 91% accuracy. A novel 'immune exclusion border' (IEB) spatial pattern, present in 35% of triple-negative breast cancers, is associated with resistance to anti-PD-L1 therapy. The IEB is maintained by CXCL12-CXCR4 signaling from cancer-associated fibroblasts. Targeting this axis restored T cell infiltration and sensitized tumors to immunotherapy in patient-derived xenografts.",
+    "keywords": ["spatial transcriptomics", "breast cancer", "tumor microenvironment", "immunotherapy resistance", "fibroblasts"],
+    "publication_date": "2024-07-14"
+  }
+]
