@@ -253,18 +253,15 @@ async def summarize_node(state: AgentState) -> AgentState:
 
     _publish(state, AgentName.SUMMARIZER, "Summary complete", {"preview": summary[:120], "citations": len(citations)})
 
-    # Guardrail + RAGAS evaluation
+    # Guardrail + RAGAS evaluation (both inline so results appear in SSE response)
     paper_ids = [p.get("id", "") for p in papers]
     guard = guardrail_service.validate(
         summary, query=state["query"], context_paper_ids=paper_ids, agent_name="summarizer"
     )
     reports_store.record_guardrail(query_preview=state["query"][:80], result=guard)
 
-    # RAGAS evaluation in background (fire-and-forget — never blocks response)
-    async def _run_ragas():
-        scores = await ragas_service.evaluate(state["query"], summary, papers)
-        reports_store.record_ragas(query_preview=state["query"][:80], scores=scores)
-    asyncio.ensure_future(_run_ragas())
+    ragas_scores = await ragas_service.evaluate(state["query"], summary, papers)
+    reports_store.record_ragas(query_preview=state["query"][:80], scores=ragas_scores)
 
     if not guard["passed"]:
         _publish(state, AgentName.SUMMARIZER,
@@ -278,6 +275,7 @@ async def summarize_node(state: AgentState) -> AgentState:
         "summaries": [summary],
         "citations": citations,
         "guardrail_report": guard,
+        "ragas_evaluation": ragas_scores,
     }
 
 

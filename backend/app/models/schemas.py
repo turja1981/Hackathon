@@ -130,6 +130,7 @@ class SearchResponse(BaseModel):
     papers: List[Paper]
     total: int
     job_id: Optional[str] = None
+    responsible_ai: Optional[Dict[str, Any]] = None
 
 
 class ReasoningStep(BaseModel):

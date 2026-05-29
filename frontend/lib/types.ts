@@ -84,6 +84,7 @@ export interface SearchResponse {
   papers: Paper[];
   total: number;
   job_id?: string;
+  responsible_ai?: ResponsibleAIReport;
 }
 
 export interface SummarizeRequest {

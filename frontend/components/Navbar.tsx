@@ -10,7 +10,6 @@ const NAV: { href: string; label: string; icon?: LucideIcon }[] = [
   { href: '/search', label: 'Search' },
   { href: '/gaps', label: 'Gaps' },
   { href: '/hypotheses', label: 'Hypotheses' },
-  { href: '/copilot', label: 'Copilot' },
   { href: '/radar', label: 'Radar' },
   { href: '/ingest', label: 'Ingest' },
   { href: '/reports', label: 'Reports', icon: ShieldCheck },
