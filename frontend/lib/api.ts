@@ -1,11 +1,14 @@
 import type {
   AdoptionMetrics,
   FeedbackRequest,
+  GuardrailReport,
   HealthResponse,
   HypothesizeRequest,
   IngestRequest,
   JobResult,
   JobStartResponse,
+  PIIReport,
+  RAGASReport,
   SearchRequest,
   SearchResponse,
   SummarizeRequest,
@@ -72,4 +75,9 @@ export const api = {
     request<AdoptionMetrics>('/api/v1/metrics/adoption'),
 
   streamUrl: (jobId: string) => `${BASE_URL}/api/v1/stream/${jobId}`,
+
+  getPIIReport: () => request<PIIReport>('/api/v1/reports/pii'),
+  getRAGASReport: () => request<RAGASReport>('/api/v1/reports/ragas'),
+  getGuardrailReport: () => request<GuardrailReport>('/api/v1/reports/guardrails'),
+  getReportsSummary: () => request<{ pii: object; ragas: object; guardrails: object }>('/api/v1/reports/summary'),
 };

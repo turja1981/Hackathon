@@ -14,6 +14,10 @@ from app.services.llm_service import llm_service, _MOCK_HYPOTHESES, _MOCK_SUMMAR
 from app.services.pubmed import pubmed_service
 from app.services.vector_store import vector_store
 from app.utils.logging import get_logger
+from app.services.pii_service import pii_service
+from app.services.guardrail_service import guardrail_service
+from app.services.ragas_service import ragas_service
+from app.services.reports_store import reports_store
 
 logger = get_logger(__name__)
 
@@ -45,6 +49,11 @@ class AgentState(TypedDict):
 
     error: Optional[str]
 
+    # Responsible AI reports
+    pii_report: Optional[Dict[str, Any]]
+    guardrail_report: Optional[Dict[str, Any]]
+    ragas_evaluation: Optional[Dict[str, Any]]
+
 
 # ---------------------------------------------------------------------------
 # Helper: publish SSE event
@@ -64,9 +73,34 @@ def _publish(state: AgentState, agent: AgentName, msg: str, data: Optional[Dict]
 # ---------------------------------------------------------------------------
 
 async def orchestrate_node(state: AgentState) -> AgentState:
-    _publish(state, AgentName.ORCHESTRATOR, f"Routing query: '{state['query']}'")
-    logger.info("orchestrate", intent=state["intent"], query=state["query"])
-    return state
+    query = state["query"]
+    _publish(state, AgentName.ORCHESTRATOR, f"Routing query: '{query[:60]}'")
+    logger.info("orchestrate", intent=state["intent"], query=query)
+
+    # Topic restriction: reject off-topic queries
+    on_topic, rejection_reason = guardrail_service.is_on_topic(query)
+    if not on_topic:
+        job_store.fail(state["job_id"], rejection_reason)
+        raise ValueError(rejection_reason)
+
+    # PII scan + mask the input query
+    try:
+        masked_query, entities = pii_service.mask(query)
+        reports_store.record_pii(
+            query_preview=masked_query[:80],
+            entities=entities,
+            backend=pii_service.backend,
+        )
+        if entities:
+            _publish(state, AgentName.ORCHESTRATOR,
+                     f"PII detected and masked ({len(entities)} entities)",
+                     {"pii_entity_types": [e["entity_type"] for e in entities]})
+    except Exception as exc:
+        logger.warning("pii_mask_error", error=str(exc))
+        masked_query = query
+        entities = []
+
+    return {**state, "query": masked_query, "pii_report": {"entities": entities, "backend": pii_service.backend}}
 
 
 # ---------------------------------------------------------------------------
@@ -218,12 +252,32 @@ async def summarize_node(state: AgentState) -> AgentState:
         citations = [{"paper_id": p.get("id", ""), "paper_title": p.get("title", ""), "claim": "Supporting evidence"} for p in papers[:2]]
 
     _publish(state, AgentName.SUMMARIZER, "Summary complete", {"preview": summary[:120], "citations": len(citations)})
+
+    # Guardrail + RAGAS evaluation
+    paper_ids = [p.get("id", "") for p in papers]
+    guard = guardrail_service.validate(
+        summary, query=state["query"], context_paper_ids=paper_ids, agent_name="summarizer"
+    )
+    reports_store.record_guardrail(query_preview=state["query"][:80], result=guard)
+
+    # RAGAS evaluation in background (fire-and-forget — never blocks response)
+    async def _run_ragas():
+        scores = await ragas_service.evaluate(state["query"], summary, papers)
+        reports_store.record_ragas(query_preview=state["query"][:80], scores=scores)
+    asyncio.ensure_future(_run_ragas())
+
+    if not guard["passed"]:
+        _publish(state, AgentName.SUMMARIZER,
+                 f"Guardrail: {'; '.join(guard['violations'])}",
+                 {"guardrail": guard})
+
     return {
         **state,
         "combined_summary": summary,
         "key_findings": key_findings,
         "summaries": [summary],
         "citations": citations,
+        "guardrail_report": guard,
     }
 
 
@@ -514,6 +568,9 @@ async def run_graph(
         "started_at": t0,
         "processing_time_ms": 0,
         "error": None,
+        "pii_report": None,
+        "guardrail_report": None,
+        "ragas_evaluation": None,
     }
 
     job = job_store.get(job_id)
@@ -551,6 +608,12 @@ def _build_result(intent: str, state: AgentState, query: str) -> Dict[str, Any]:
         "kpi_target_met": time_reduction_pct >= 70,
     }
 
+    responsible_ai = {
+        "pii_report": state.get("pii_report"),
+        "guardrail_report": state.get("guardrail_report"),
+        "ragas_evaluation": state.get("ragas_evaluation"),
+    }
+
     if intent == "search":
         return {
             "type": "search",
@@ -558,6 +621,7 @@ def _build_result(intent: str, state: AgentState, query: str) -> Dict[str, Any]:
             "papers": state["ranked_papers"],
             "total": len(state["ranked_papers"]),
             "kpi_metrics": kpi_metrics,
+            **responsible_ai,
         }
     elif intent == "summarize":
         return {
@@ -568,6 +632,7 @@ def _build_result(intent: str, state: AgentState, query: str) -> Dict[str, Any]:
             "citations": state.get("citations", []),
             "papers_used": state["ranked_papers"],
             "kpi_metrics": kpi_metrics,
+            **responsible_ai,
         }
     elif intent == "gaps":
         gaps = state.get("research_gaps", [])
@@ -582,6 +647,7 @@ def _build_result(intent: str, state: AgentState, query: str) -> Dict[str, Any]:
                 "gap_target_met": len(gaps) >= 3,
                 "gap_detection_rate": round(len(gaps) / max(state.get("max_papers", 5), 1) * 100),
             },
+            **responsible_ai,
         }
     else:  # hypothesize
         hypotheses = state["hypotheses"]
@@ -602,4 +668,5 @@ def _build_result(intent: str, state: AgentState, query: str) -> Dict[str, Any]:
                 "avg_novelty_pct": round(avg_novelty * 100),
                 "novelty_target_met": avg_novelty >= 0.75,
             },
+            **responsible_ai,
         }

@@ -6,7 +6,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import ingest, papers, search, summarize, hypothesize, stream, feedback, gaps, copilot, metrics
+from app.api.v1 import ingest, papers, search, summarize, hypothesize, stream, feedback, gaps, copilot, metrics, reports
 from app.config import settings
 from app.models.schemas import HealthResponse
 from app.services.vector_store import vector_store
@@ -58,6 +58,7 @@ app.include_router(feedback.router, prefix=PREFIX, tags=["Feedback"])
 app.include_router(gaps.router, prefix=PREFIX, tags=["Gaps"])
 app.include_router(copilot.router, prefix=PREFIX, tags=["Copilot"])
 app.include_router(metrics.router, prefix=PREFIX, tags=["Metrics"])
+app.include_router(reports.router, prefix=PREFIX, tags=["Reports"])
 
 
 @app.get("/api/v1/health", response_model=HealthResponse, tags=["Health"])

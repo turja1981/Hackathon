@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Brain } from 'lucide-react';
+import { Brain, ShieldCheck, type LucideIcon } from 'lucide-react';
 import { clsx } from 'clsx';
 
-const NAV = [
+const NAV: { href: string; label: string; icon?: LucideIcon }[] = [
   { href: '/', label: 'Home' },
   { href: '/search', label: 'Search' },
   { href: '/gaps', label: 'Gaps' },
@@ -13,6 +13,7 @@ const NAV = [
   { href: '/copilot', label: 'Copilot' },
   { href: '/radar', label: 'Radar' },
   { href: '/ingest', label: 'Ingest' },
+  { href: '/reports', label: 'Reports', icon: ShieldCheck },
 ];
 
 export default function Navbar() {
@@ -26,17 +27,18 @@ export default function Navbar() {
           <span className="hidden sm:block text-xs text-gray-600 font-normal">Research Discovery</span>
         </Link>
         <div className="flex items-center gap-0.5 overflow-x-auto">
-          {NAV.map(({ href, label }) => (
+          {NAV.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
               className={clsx(
-                'rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors whitespace-nowrap',
+                'rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-1',
                 pathname === href
                   ? 'bg-sky-500/20 text-sky-400'
                   : 'text-gray-400 hover:text-gray-100 hover:bg-white/5',
               )}
             >
+              {Icon && <Icon size={14} />}
               {label}
             </Link>
           ))}

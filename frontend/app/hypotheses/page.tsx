@@ -7,9 +7,10 @@ import SearchBar from '@/components/SearchBar';
 import HypothesisPanel from '@/components/HypothesisPanel';
 import AgentStatusTracker from '@/components/AgentStatusTracker';
 import KpiMetricsBar from '@/components/KpiMetricsBar';
+import AnswerMetricsPanel from '@/components/AnswerMetricsPanel';
 import { api } from '@/lib/api';
 import { useSSE } from '@/lib/hooks/useSSE';
-import type { Hypothesis, KpiMetrics } from '@/lib/types';
+import type { Hypothesis, KpiMetrics, ResponsibleAIReport } from '@/lib/types';
 
 function HypothesesContent() {
   const searchParams = useSearchParams();
@@ -24,6 +25,7 @@ function HypothesesContent() {
   const hypotheses = (result as { hypotheses?: Hypothesis[] } | null)?.hypotheses ?? [];
   const contextSummary = (result as { context_summary?: string } | null)?.context_summary ?? '';
   const kpiMetrics = (result as { kpi_metrics?: KpiMetrics } | null)?.kpi_metrics ?? null;
+  const responsibleAI = (result as { responsible_ai?: ResponsibleAIReport } | null)?.responsible_ai ?? null;
 
   const handleGenerate = async (q: string) => {
     setQuery(q);
@@ -89,6 +91,10 @@ function HypothesesContent() {
 
             {kpiMetrics && (
               <KpiMetricsBar metrics={kpiMetrics} showNovelty />
+            )}
+
+            {responsibleAI && (
+              <AnswerMetricsPanel report={responsibleAI} />
             )}
 
             {hypotheses.length > 0 && (

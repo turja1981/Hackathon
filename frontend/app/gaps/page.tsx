@@ -7,9 +7,10 @@ import SearchBar from '@/components/SearchBar';
 import ResearchGapCard from '@/components/ResearchGapCard';
 import AgentStatusTracker from '@/components/AgentStatusTracker';
 import KpiMetricsBar from '@/components/KpiMetricsBar';
+import AnswerMetricsPanel from '@/components/AnswerMetricsPanel';
 import { api } from '@/lib/api';
 import { useSSE } from '@/lib/hooks/useSSE';
-import type { ResearchGap, KpiMetrics } from '@/lib/types';
+import type { ResearchGap, KpiMetrics, ResponsibleAIReport } from '@/lib/types';
 
 function GapsContent() {
   const searchParams = useSearchParams();
@@ -21,6 +22,7 @@ function GapsContent() {
 
   const gaps = (result as { research_gaps?: ResearchGap[] } | null)?.research_gaps ?? [];
   const kpiMetrics = (result as { kpi_metrics?: KpiMetrics } | null)?.kpi_metrics ?? null;
+  const responsibleAI = (result as { responsible_ai?: ResponsibleAIReport } | null)?.responsible_ai ?? null;
 
   const handleDetect = async (q: string) => {
     setQuery(q);
@@ -72,6 +74,10 @@ function GapsContent() {
 
             {kpiMetrics && (
               <KpiMetricsBar metrics={kpiMetrics} showGaps />
+            )}
+
+            {responsibleAI && (
+              <AnswerMetricsPanel report={responsibleAI} />
             )}
 
             {gaps.length > 0 && (

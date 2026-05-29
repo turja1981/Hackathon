@@ -105,6 +105,28 @@ export interface JobStartResponse {
   stream_url: string;
 }
 
+export interface ResponsibleAIReport {
+  pii_report?: {
+    entities: Array<{ entity_type: string; start: number; end: number; score: number; text: string }>;
+    backend: string;
+  };
+  guardrail_report?: {
+    passed: boolean;
+    violations: string[];
+    checks: Record<string, boolean>;
+    pii_in_output: number;
+    agent: string;
+    recommendation?: string;
+  };
+  ragas_evaluation?: {
+    faithfulness: number;
+    answer_relevancy: number;
+    context_precision: number;
+    overall_score: number;
+    status: string;
+  };
+}
+
 export interface JobResult {
   job_id: string;
   status: string;
@@ -122,6 +144,7 @@ export interface JobResult {
     research_gaps?: ResearchGap[];
     papers_analyzed?: number;
     kpi_metrics?: KpiMetrics;
+    responsible_ai?: ResponsibleAIReport;
   };
   error?: string;
 }
@@ -175,6 +198,57 @@ export interface HealthResponse {
   vector_store_loaded: boolean;
   paper_count: number;
   mock_mode: boolean;
+}
+
+export interface PIIReport {
+  total_queries_scanned: number;
+  queries_with_pii: number;
+  pii_rate_pct: number;
+  entity_type_counts: Record<string, number>;
+  backend: string;
+  recent_events: Array<{
+    timestamp: string;
+    query_preview: string;
+    entity_count: number;
+    entity_types: string[];
+    masked: boolean;
+  }>;
+}
+
+export interface RAGASReport {
+  total_evaluations: number;
+  avg_scores: {
+    faithfulness: number;
+    answer_relevancy: number;
+    context_precision: number;
+    overall: number;
+  };
+  recent_evals: Array<{
+    timestamp: string;
+    query_preview: string;
+    faithfulness: number;
+    answer_relevancy: number;
+    context_precision: number;
+    overall_score: number;
+    status: string;
+  }>;
+}
+
+export interface GuardrailReport {
+  total_validations: number;
+  passed: number;
+  failed: number;
+  pass_rate_pct: number;
+  violation_breakdown: Record<string, number>;
+  recent_events: Array<{
+    timestamp: string;
+    query_preview: string;
+    agent: string;
+    passed: boolean;
+    checks: Record<string, boolean>;
+    violations: string[];
+    pii_in_output: number;
+  }>;
 }
 
 // ---------------------------------------------------------------------------
