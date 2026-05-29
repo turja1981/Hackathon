@@ -41,10 +41,28 @@ class VectorStore:
         idx_file = self._index_path / "index.faiss"
         meta_file = self._index_path / "metadata.pkl"
 
+        loaded = False
         if idx_file.exists() and meta_file.exists():
-            logger.info("loading_faiss_index", path=str(idx_file))
-            self._load_from_disk(idx_file, meta_file)
-        else:
+            try:
+                self._load_from_disk(idx_file, meta_file)
+                expected_dim = embedding_service.dim
+                if self._index is not None and self._index.d != expected_dim:
+                    logger.warning(
+                        "faiss_dim_mismatch_rebuilding",
+                        stored=self._index.d,
+                        expected=expected_dim,
+                    )
+                    self._index = None
+                    self._papers = []
+                else:
+                    logger.info("loading_faiss_index", path=str(idx_file))
+                    loaded = True
+            except Exception as exc:
+                logger.warning("faiss_load_failed_rebuilding", error=str(exc))
+                self._index = None
+                self._papers = []
+
+        if not loaded:
             logger.info("building_faiss_index", source=papers_json_path)
             papers = self._load_papers_json(papers_json_path)
             self.add_papers(papers)

@@ -38,10 +38,10 @@ class Settings(BaseSettings):
     # Use "all-MiniLM-L6-v2" for local (no API key needed)
     # Use "azure/genailab-maas-text-embedding-3-large" for GenAI Lab embeddings
     # -------------------------------------------------------------------------
-    EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
+    EMBEDDING_MODEL: str = "azure/genailab-maas-text-embedding-3-large"
     EMBEDDING_DEVICE: str = "cpu"
-    # Set to true to use LiteLLM/GenAI Lab for embeddings instead of local model
-    USE_API_EMBEDDINGS: bool = False
+    # Set to false to use local sentence-transformers instead of Azure OpenAI
+    USE_API_EMBEDDINGS: bool = True
 
     # -------------------------------------------------------------------------
     # FAISS
@@ -62,6 +62,13 @@ class Settings(BaseSettings):
 
     # Feature flags
     MOCK_LLM_MODE: bool = False
+
+    # -------------------------------------------------------------------------
+    # Network / Corporate proxy
+    # Set to true on corporate networks with SSL inspection (e.g. TCS)
+    # Disables certificate verification for HuggingFace Hub downloads
+    # -------------------------------------------------------------------------
+    DISABLE_SSL_VERIFY: bool = False
 
     # -------------------------------------------------------------------------
     # Derived helpers

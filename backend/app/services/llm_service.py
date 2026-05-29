@@ -148,6 +148,9 @@ class LLMService:
         import litellm
         from litellm import Router
 
+        if settings.DISABLE_SSL_VERIFY:
+            litellm.ssl_verify = False
+
         if settings.LITELLM_CACHE_ENABLED:
             try:
                 from litellm import Cache
