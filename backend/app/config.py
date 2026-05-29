@@ -36,9 +36,9 @@ class Settings(BaseSettings):
     # -------------------------------------------------------------------------
     # Embeddings
     # Use "all-MiniLM-L6-v2" for local (no API key needed)
-    # Use "azure/genailab-maas-text-embedding-3-large" for GenAI Lab embeddings
+    # Use "openai/genailab-maas-text-embedding-3-large" for GenAI Lab (OpenAI-compatible)
     # -------------------------------------------------------------------------
-    EMBEDDING_MODEL: str = "azure/genailab-maas-text-embedding-3-large"
+    EMBEDDING_MODEL: str = "openai/genailab-maas-text-embedding-3-large"
     EMBEDDING_DEVICE: str = "cpu"
     # Set to false to use local sentence-transformers instead of Azure OpenAI
     USE_API_EMBEDDINGS: bool = True

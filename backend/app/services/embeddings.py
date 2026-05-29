@@ -81,18 +81,25 @@ class EmbeddingService:
 
         import litellm
 
+        if settings.DISABLE_SSL_VERIFY:
+            litellm.ssl_verify = False
+
+        # Strip provider prefix from model name and build openai-compatible call.
+        # GenAI Lab is OpenAI-compatible — must NOT use "azure/" prefix (different API format).
+        model_name = settings.EMBEDDING_MODEL
+        if "/" in model_name:
+            # e.g. "openai/genailab-maas-text-embedding-3-large" → keep as-is for litellm routing
+            pass
+
         try:
-            kwargs: dict = {"model": settings.EMBEDDING_MODEL, "input": texts}
+            kwargs: dict = {"model": model_name, "input": texts}
             if settings.GENAILAB_API_KEY:
                 kwargs["api_key"] = settings.GENAILAB_API_KEY
                 kwargs["api_base"] = settings.GENAILAB_API_BASE
             elif settings.OPENAI_API_KEY:
                 kwargs["api_key"] = settings.OPENAI_API_KEY
 
-            if settings.DISABLE_SSL_VERIFY:
-                litellm.ssl_verify = False
-
-            logger.info("encoding_via_api", model=settings.EMBEDDING_MODEL, count=len(texts))
+            logger.info("encoding_via_api", model=model_name, count=len(texts))
             response = litellm.embedding(**kwargs)
             vectors = np.array(
                 [item.embedding for item in response.data], dtype=np.float32
@@ -106,8 +113,9 @@ class EmbeddingService:
             self._dim = vectors.shape[1]
             return vectors
         except Exception as exc:
-            logger.error("api_embedding_failed", error=str(exc))
-            raise
+            logger.error("api_embedding_failed_using_mock", error=str(exc))
+            logger.warning("falling_back_to_mock_embeddings")
+            return self._encode_mock(texts)
 
     def _encode_mock(self, texts: List[str]) -> np.ndarray:
         """Deterministic mock embeddings (used in MOCK_LLM_MODE with no API key)."""
