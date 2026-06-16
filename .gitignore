@@ -14,8 +14,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+backend/lib/
+backend/lib64/
 parts/
 sdist/
 var/
@@ -216,3 +216,33 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+frontend/.next/
+frontend/node_modules/
+frontend/out/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment files (keep examples, ignore actuals)
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.local.example
+
+# FAISS index (large binary — rebuild on deploy)
+backend/data/faiss_index/*.faiss
+backend/data/faiss_index/*.pkl
+
+# Python
+*.pyc
+__pycache__/
+.venv/
+venv/
